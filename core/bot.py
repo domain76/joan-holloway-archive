@@ -17,7 +17,8 @@ class Joan(commands.Bot):
             packages=[],
             coowners=[],
             whitelist=[],
-            blacklist=[]
+            blacklist=[],
+            enable_sentry=None
         )
 
         self.db.register_guild(

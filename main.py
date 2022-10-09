@@ -1,7 +1,8 @@
 from core.bot import Joan, ExitCodes
 from core.global_checks import init_global_checks
 from core.events import init_events
-from core.cli import interactive_config, confirm, parse_cli_flags
+from core.sentry_setup import init_sentry_logging
+from core.cli import interactive_config, confirm, parse_cli_flags, ask_sentry
 from core.core_commands import Core
 from core.dev_commands import Dev
 import asyncio
@@ -59,6 +60,7 @@ if __name__ == '__main__':
     joan = Joan(cli_flags, description=description, pm_help=None)
     init_global_checks(joan)
     init_events(joan, cli_flags)
+
     joan.add_cog(Core())
 
     if cli_flags.dev:
@@ -76,6 +78,12 @@ if __name__ == '__main__':
         else:
             log.critical("Token and prefix must be set in order to login.")
             sys.exit(1)
+
+    if joan.db.enable_sentry() is None:
+        ask_sentry(joan)
+
+    if joan.db.enable_sentry():
+        init_sentry_logging()
 
     loop = asyncio.get_event_loop()
     cleanup_tasks = True

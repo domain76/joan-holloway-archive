@@ -1,6 +1,7 @@
 import argparse
 import asyncio
 
+from core.bot import Joan
 
 def confirm(m=""):
     return input(m).lower().strip() in ("y", "yes")
@@ -39,7 +40,25 @@ def interactive_config(joan, token_set, prefix_set):
             if prefix:
                 loop.run_until_complete(joan.db.set("prefix", [prefix]))
 
+    ask_sentry(joan)
+
     return token
+
+
+
+def ask_sentry(joan: Joan):
+    loop = asyncio.get_event_loop()
+    print("\nThank you for installing Joan Holloway alpha! The current version\n"
+          " is not suited for production use and is aimed at testing\n"
+          " the current and upcoming featureset, that's why we will\n"
+          " also collect the fatal error logs to help us fix any new\n"
+          " found issues in a timely manner. If you wish to opt in\n"
+          " the process please type \"yes\":\n")
+    if not confirm("> "):
+        loop.run_until_complete(joan.db.set("enable_sentry", False))
+    else:
+        loop.run_until_complete(joan.db.set("enable_sentry", True))
+        print("\nThank you for helping us with the development process!")
 
 
 def parse_cli_flags():
