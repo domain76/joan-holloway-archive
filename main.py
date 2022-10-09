@@ -1,8 +1,7 @@
 from core.bot import Joan, ExitCodes
 from core.global_checks import init_global_checks
 from core.events import init_events
-from core.settings import parse_cli_flags
-from core.cli import interactive_config, confirm
+from core.cli import interactive_config, confirm, parse_cli_flags
 from core.core_commands import Core
 from core.dev_commands import Dev
 import asyncio
@@ -65,8 +64,8 @@ if __name__ == '__main__':
     if cli_flags.dev:
         joan.add_cog(Dev())
 
-    token = os.environ.get("JOAN_TOKEN", joan.db.get_global("token", None))
-    prefix = cli_flags.prefix or joan.db.get_global("prefix", [])
+    token = os.environ.get("JOAN_TOKEN", joan.db.token())
+    prefix = cli_flags.prefix or joan.db.prefix()
 
     if token is None or not prefix:
         if cli_flags.no_prompt is False:
@@ -89,11 +88,11 @@ if __name__ == '__main__':
                      "a user account, remember that the --not-bot flag "
                      "must be used. For self-bot functionalities instead, "
                      "--self-bot")
-        db_token = joan.db.get_global("token")
+        db_token = joan.db.token()
         if db_token and not cli_flags.no_prompt:
             print("\nDO you want to reset the token? (y/n)")
             if confirm("> "):
-                loop.run_until_complete(joan.db.remove_global("token"))
+                loop.run_until_complete(joan.db.set("token", ""))
                 print("Token has been reset.")
     except KeyboardInterrupt:
         log.info("Keyboard interrupt detected. Quitting...")
