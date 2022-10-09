@@ -1,13 +1,12 @@
 from pathlib import Path
 
-from core.drivers.joan_json import JSON as JSONDriver
-from core.drivers.joan_mongo import Mongo
+from core.drivers.red_json import JSON as JSONDriver
+from core.drivers.red_mongo import Mongo
 import logging
 
 from typing import Callable
 
 log = logging.getLogger("red.config")
-
 
 class BaseConfig:
     def __init__(self, cog_name, unique_identifier, driver_spawn, force_registration=False,
@@ -62,25 +61,25 @@ class BaseConfig:
             "MEMBER": {}, "USER": {}}
 
     @classmethod
-    def get_conf(cls, cog_instance: object, unique_identifier: int = 0,
-                 force_registration: bool = False):
+    def get_conf(cls, cog_instance: object, unique_identifier: int=0,
+                 force_registration: bool=False):
         """
         Gets a config object that cog's can use to safely store data. The
             backend to this is totally modular and can easily switch between
             JSON and a DB. However, when changed, all data will likely be lost
             unless cogs write some converters for their data.
-
+        
         Positional Arguments:
             cog_instance - The cog `self` object, can be passed in from your
                 cog's __init__ method.
-
+        
         Keyword Arguments:
             unique_identifier - a random integer or string that is used to
                 differentiate your cog from any other named the same. This way we
                 can safely store data for multiple cogs that are named the same.
-
+                
                 YOU SHOULD USE THIS.
-
+            
             force_registration - A flag which will cause the Config object to
                 throw exceptions if you try to get/set data keys that you have
                 not pre-registered. I highly recommend you ENABLE this as it
@@ -103,7 +102,7 @@ class BaseConfig:
                    driver_spawn=driver_spawn, force_registration=force_registration)
 
     @classmethod
-    def get_core_conf(cls, force_registration: bool = False):
+    def get_core_conf(cls, force_registration: bool=False):
         core_data_path = Path.cwd() / 'core' / '.data'
         driver_spawn = JSONDriver("Core", data_path_override=core_data_path)
         return cls(cog_name="Core", driver_spawn=driver_spawn,
@@ -128,7 +127,7 @@ class BaseConfig:
     def __setattr__(self, key, value):
         if 'defaults' in self.__dict__:  # Necessary to let the cog load
             restricted = list(self.defaults[self.collection].keys()) + \
-                         list(self.unsettable_keys)
+                list(self.unsettable_keys)
             if key in restricted:
                 raise ValueError("Not allowed to dynamically set attributes of"
                                  " unsettable_keys: {}".format(restricted))
@@ -181,7 +180,7 @@ class BaseConfig:
         :param global_defaults: Each key should be the key you want to
             access data by and the value is the default value of that
             key.
-        :return:
+        :return: 
         """
         for k, v in global_defaults.items():
             try:
@@ -207,7 +206,7 @@ class BaseConfig:
         :param guild_defaults: Each key should be the key you want to
             access data by and the value is the default value of that
             key.
-        :return:
+        :return: 
         """
         for k, v in guild_defaults.items():
             try:
@@ -233,7 +232,7 @@ class BaseConfig:
         :param channel_defaults: Each key should be the key you want to
             access data by and the value is the default value of that
             key.
-        :return:
+        :return: 
         """
         for k, v in channel_defaults.items():
             try:
@@ -259,7 +258,7 @@ class BaseConfig:
         :param role_defaults: Each key should be the key you want to
             access data by and the value is the default value of that
             key.
-        :return:
+        :return: 
         """
         for k, v in role_defaults.items():
             try:
@@ -285,7 +284,7 @@ class BaseConfig:
         :param member_defaults: Each key should be the key you want to
             access data by and the value is the default value of that
             key.
-        :return:
+        :return: 
         """
         for k, v in member_defaults.items():
             try:
@@ -311,7 +310,7 @@ class BaseConfig:
         :param user_defaults: Each key should be the key you want to
             access data by and the value is the default value of that
             key.
-        :return:
+        :return: 
         """
         for k, v in user_defaults.items():
             try:
@@ -338,15 +337,15 @@ class Config(BaseConfig):
         help a cog developer make fewer mistakes (such as
         typos) when dealing with cog data and to make those mistakes
         apparent much faster in the design process.
-
+        
         It also has the capability to safely store data between cogs
         that share the same name.
-
+        
     There are two main components to this config object. First,
         you have the ability to get data on a level specific basis.
         The seven levels available are: global, guild, channel, role,
         member, user, and misc.
-
+        
         The second main component is registering default values for
         data in each of the levels. This functionality is OPTIONAL
         and must be explicitly enabled when creating the Config object
@@ -356,47 +355,47 @@ class Config(BaseConfig):
         Creating a Config object:
             Use the `Config.get_conf()` class method to create new
                 Config objects.
-
+                
                 See the `Config.get_conf()` documentation for more
                 information.
 
         Registering Default Values (optional):
             You can register default values for data at all levels
                 EXCEPT misc.
-
+            
             Simply pass in the key/value pairs as keyword arguments to
                 the respective function.
-
+                
                 e.g.: conf_obj.register_global(enabled=True)
                       conf_obj.register_guild(likes_red=True)
-
+        
         Retrieving data by attributes:
             Since I registered the "enabled" key in the previous example
                 at the global level I can now do:
-
+                
                 conf_obj.enabled()
-
+                
                 which will retrieve the current value of the "enabled"
                 key, making use of the default of "True". I can also do
                 the same for the guild key "likes_red":
-
+                
                 conf_obj.guild(guild_obj).likes_red()
-
+            
             If I elected to not register default values, you can provide them
                 when you try to access the key:
-
+            
                 conf_obj.no_default(default=True)
-
+                
                 However if you do not provide a default and you do not register
                 defaults, accessing the attribute will return "None".
-
+        
         Saving data:
             This is accomplished by using the `set` function available at
                 every level.
-
+                
                 e.g.: conf_obj.set("enabled", False)
                       conf_obj.guild(guild_obj).set("likes_red", False)
-
+                      
                 If `force_registration` was enabled when the config object
                 was created you will only be allowed to save keys that you
                 have registered.
@@ -408,9 +407,9 @@ class Config(BaseConfig):
     def __getattr__(self, key) -> Callable:
         """
         Until I've got a better way to do this I'm just gonna fake __call__
-
-        :param key:
-        :return: lambda function with kwarg
+        
+        :param key: 
+        :return: lambda function with kwarg 
         """
         return self._get_value_from_key(key)
 
@@ -438,16 +437,16 @@ class Config(BaseConfig):
     def get(self, key, default=None):
         """
         Included as an alternative to registering defaults.
-
-        :param key:
-        :param default:
-        :return:
+        
+        :param key: 
+        :param default: 
+        :return: 
         """
 
-        try:
-            return getattr(self, key)(default=default)
-        except AttributeError:
-            return
+        if default is not None:
+            return self._get_value_from_key(key)(default)
+        else:
+            return self._get_value_from_key(key)()
 
     async def set(self, key, value):
         # Notice to future developers:
