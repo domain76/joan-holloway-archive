@@ -30,7 +30,7 @@ class JsonIO:
     async def _threadsafe_save_json(self, path, data, settings=PRETTY):
         loop = asyncio.get_event_loop()
         func = functools.partial(self._save_json, path, data, settings)
-        with await self._lock:
+        async with self._lock:
             await loop.run_in_executor(None, func)
 
     def _load_json(self, path):

@@ -2,6 +2,7 @@ from core.bot import Joan, ExitCodes
 from core.global_checks import init_global_checks
 from core.events import init_events
 from core.settings import parse_cli_flags
+from core.cli import interactive_config, confirm
 import asyncio
 import discord
 import logging.handlers
@@ -49,6 +50,7 @@ def init_loggers(cli_flags):
 
     return logger
 
+
 if __name__ == '__main__':
     cli_flags = parse_cli_flags()
     log = init_loggers(cli_flags)
@@ -61,20 +63,35 @@ if __name__ == '__main__':
         pass # load dev cog here?
 
     token = os.environ.get("JOAN_TOKEN", joan.db.get_global("token", None))
+    prefix = cli_flags.prefix or joan.db.get_global("prefix", [])
 
-    if token is None:
-        log.critical("No token to login with")
-        sys.exit(1)
+    if token is None or not prefix:
+        if cli_flags.no_prompt is False:
+            new_token = interactive_config(joan, token_set=bool(token),
+                                           prefix_set=bool(prefix))
+            if new_token:
+                token = new_token
+        else:
+            log.critical("Token and prefix must be set in order to login.")
+            sys.exit(1)
 
     loop = asyncio.get_event_loop()
+    cleanup_tasks = True
 
     try:
         loop.run_until_complete(joan.start(token, bot=not cli_flags.not_bot))
     except discord.LoginFailure:
+        cleanup_tasks = False # No login happened, no need for this
         log.critical("This token doesn't seem to be valid. If it belongs to "
                      "a user account, remember that the --not-bot flag "
                      "must be used. For self-bot functionalities instead, "
                      "--self-bot")
+        db_token = joan.db.get_global("token")
+        if db_token and not cli_flags.no_prompt:
+            print("\nDO you want to reset the token? (y/n)")
+            if confirm("> "):
+                loop.run_until_complete(joan.db.remove_global("token"))
+                print("Token has been reset.")
     except KeyboardInterrupt:
         log.info("Keyboard interrupt detected. Quitting...")
         loop.run_until_complete(joan.logout())
@@ -83,9 +100,11 @@ if __name__ == '__main__':
         log.critical("Fatal exception", exc_info=e)
         loop.run_until_complete(joan.logout())
     finally:
-        pending = asyncio.Task.all_tasks(loop=joan.loop)
-        gathered = asyncio.gather(*pending, loop=joan.loop)
-        gathered.cancel()
-        joan.loop.run_until_complete(gathered)
-        gathered.exception()
+        if cleanup_tasks:
+            pending = asyncio.Task.all_tasks(loop=joan.loop)
+            gathered = asyncio.gather(*pending, loop=joan.loop)
+            gathered.cancel()
+            joan.loop.run_until_complete(gathered)
+            gathered.exception()
+
         sys.exit(joan._shutdown_mode.value)
