@@ -3,6 +3,8 @@ from core.global_checks import init_global_checks
 from core.events import init_events
 from core.settings import parse_cli_flags
 from core.cli import interactive_config, confirm
+from core.core_commands import Core
+from core.dev_commands import Dev
 import asyncio
 import discord
 import logging.handlers
@@ -58,9 +60,10 @@ if __name__ == '__main__':
     joan = Joan(cli_flags, description=description, pm_help=None)
     init_global_checks(joan)
     init_events(joan, cli_flags)
-    joan.load_extension('core')
+    joan.add_cog(Core())
+
     if cli_flags.dev:
-        pass # load dev cog here?
+        joan.add_cog(Dev())
 
     token = os.environ.get("JOAN_TOKEN", joan.db.get_global("token", None))
     prefix = cli_flags.prefix or joan.db.get_global("prefix", [])
