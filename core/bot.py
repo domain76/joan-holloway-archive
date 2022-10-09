@@ -1,12 +1,13 @@
 from discord.ext import commands
 from collections import Counter
 from core.utils.helpers import JsonGuildDB
+from enum import Enum
 import os
 
 
 class Joan(commands.Bot):
     def __init__(self, cli_flags, **kwargs):
-        self._shutdown_mode = None
+        self._shutdown_mode = ExitCodes.CRITICAL
         self.db = JsonGuildDB("core/data/settings.json",
                               autosave=True,
                               create_dirs=True)
@@ -34,7 +35,7 @@ class Joan(commands.Bot):
 
     async def is_owner(self, user, allow_coowners=True):
         if allow_coowners:
-            if user.id in self.settings.coowners:
+            if user.id in self.db.get_global("coowners", []):
                 return True
         return await super().is_owner(user)
 
@@ -48,14 +49,31 @@ class Joan(commands.Bot):
             for page in pages:
                 await ctx.send(page)
 
-    async def logout(self, *, restart=False):
+    async def shutdown(self, *, restart=False):
         """Gracefully quits Joan with exit code 0
 
         If restart is True, the exit code will be 26 instead
         Upon receiving that exit code, the launcher restarts Joan"""
-        self._shutdown_mode = not restart
-        await super().logout()
+        if not restart:
+            self._shutdown_mode = ExitCodes.SHUTDOWN
+        else:
+            self._shutdown_mode = ExitCodes.RESTART
+
+        await self.logout()
 
     def list_packages(self):
         """Lists packages present in the cogs folder"""
         return os.listdir("cogs")
+
+    async def save_packages_status(self):
+        loaded = []
+        for package in self.extensions:
+            if package.startswith("cogs."):
+                loaded.append(package)
+        await self.db.set_global("packages", loaded)
+
+
+class ExitCodes(Enum):
+    CRITICAL = 1
+    SHUTDOWN = 0
+    RESTART = 26
