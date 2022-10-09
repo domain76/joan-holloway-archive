@@ -57,7 +57,7 @@ if __name__ == '__main__':
     description = "Joan Holloway - Alpha"
     joan = Joan(cli_flags, description=description, pm_help=None)
     init_global_checks(joan)
-    init_events(joan)
+    init_events(joan, cli_flags)
     joan.load_extension('core')
     if cli_flags.dev:
         pass # load dev cog here?
