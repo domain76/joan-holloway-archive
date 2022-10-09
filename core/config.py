@@ -6,7 +6,8 @@ import logging
 
 from typing import Callable
 
-log = logging.getLogger("joan.config")
+log = logging.getLogger("red.config")
+
 
 class BaseConfig:
     def __init__(self, cog_name, unique_identifier, driver_spawn, force_registration=False,
@@ -25,7 +26,7 @@ class BaseConfig:
         self.force_registration = force_registration
 
         try:
-            self.driver.maybe_add_indent(self.uuid)
+            self.driver.maybe_add_ident(self.uuid)
         except AttributeError:
             pass
 
@@ -51,7 +52,7 @@ class BaseConfig:
                                 "guild_id", "channel_id", "role_id",
                                 "user_id", "uuid")
         self.invalid_keys = (
-            "driver_span",
+            "driver_spawn",
             "_driver", "collection",
             "collection_uuid", "force_registration"
         )
@@ -61,8 +62,8 @@ class BaseConfig:
             "MEMBER": {}, "USER": {}}
 
     @classmethod
-    def get_conf(cls, cog_instance: object, unique_identifier: int=0,
-                 force_registration: bool=False):
+    def get_conf(cls, cog_instance: object, unique_identifier: int = 0,
+                 force_registration: bool = False):
         """
         Gets a config object that cog's can use to safely store data. The
             backend to this is totally modular and can easily switch between
@@ -71,14 +72,14 @@ class BaseConfig:
 
         Positional Arguments:
             cog_instance - The cog `self` object, can be passed in from your
-            cog's __init__ method.
+                cog's __init__ method.
 
         Keyword Arguments:
             unique_identifier - a random integer or string that is used to
                 differentiate your cog from any other named the same. This way we
                 can safely store data for multiple cogs that are named the same.
 
-                YOU SHOULD USE THIS FILE:
+                YOU SHOULD USE THIS.
 
             force_registration - A flag which will cause the Config object to
                 throw exceptions if you try to get/set data keys that you have
@@ -86,8 +87,8 @@ class BaseConfig:
                 will help reduce dumb typo errors.
         """
 
-        url = None # TODO: get mongo url
-        port = None # TODO: get mongo port
+        url = None  # TODO: get mongo url
+        port = None  # TODO: get mongo port
 
         def spawn_mongo_driver():
             return Mongo(url, port)
@@ -102,7 +103,7 @@ class BaseConfig:
                    driver_spawn=driver_spawn, force_registration=force_registration)
 
     @classmethod
-    def get_core_conf(cls, force_registration: bool=False):
+    def get_core_conf(cls, force_registration: bool = False):
         core_data_path = Path.cwd() / 'core' / '.data'
         driver_spawn = JSONDriver("Core", data_path_override=core_data_path)
         return cls(cog_name="Core", driver_spawn=driver_spawn,
@@ -125,9 +126,9 @@ class BaseConfig:
         raise NotImplemented
 
     def __setattr__(self, key, value):
-        if 'defaults' in self.__dict__: # Necessary to let the cog load
+        if 'defaults' in self.__dict__:  # Necessary to let the cog load
             restricted = list(self.defaults[self.collection].keys()) + \
-                list(self.unsettable_keys)
+                         list(self.unsettable_keys)
             if key in restricted:
                 raise ValueError("Not allowed to dynamically set attributes of"
                                  " unsettable_keys: {}".format(restricted))
@@ -157,7 +158,7 @@ class BaseConfig:
         raise NotImplemented
 
     def role(self, role):
-        """This should return a `BaseCOnfig` instance with the corresponding
+        """This should return a `BaseConfig` instance with the corresponding
             `collection` and `collection_uuid`."""
         raise NotImplemented
 
@@ -193,7 +194,7 @@ class BaseConfig:
         if key in self.unsettable_keys:
             raise KeyError("Attempt to use restricted key: '{}'".format(key))
         elif not key.isidentifier():
-            raise RuntimeError("Invalid key named, must be a valid python variable"
+            raise RuntimeError("Invalid key name, must be a valid python variable"
                                " name.")
         self.defaults["GLOBAL"][key] = default
 
@@ -348,7 +349,7 @@ class Config(BaseConfig):
 
         The second main component is registering default values for
         data in each of the levels. This functionality is OPTIONAL
-        and must be explicitly enabled when creationg the Config object
+        and must be explicitly enabled when creating the Config object
         using the kwarg `force_registration=True`.
 
     Basic Usage:
@@ -367,19 +368,19 @@ class Config(BaseConfig):
                 the respective function.
 
                 e.g.: conf_obj.register_global(enabled=True)
-                      conf_obj.register_guild(likes_joan=True)
+                      conf_obj.register_guild(likes_red=True)
 
         Retrieving data by attributes:
             Since I registered the "enabled" key in the previous example
-                at the global level I can no do:
+                at the global level I can now do:
 
                 conf_obj.enabled()
 
                 which will retrieve the current value of the "enabled"
                 key, making use of the default of "True". I can also do
-                the same for the guild key "likes_joan":
+                the same for the guild key "likes_red":
 
-                conf_obj.guild(guild_obj).likes_joan()
+                conf_obj.guild(guild_obj).likes_red()
 
             If I elected to not register default values, you can provide them
                 when you try to access the key:
@@ -394,7 +395,7 @@ class Config(BaseConfig):
                 every level.
 
                 e.g.: conf_obj.set("enabled", False)
-                      conf_obj.guild(guild_obj).set("likes_joan", False)
+                      conf_obj.guild(guild_obj).set("likes_red", False)
 
                 If `force_registration` was enabled when the config object
                 was created you will only be allowed to save keys that you
@@ -418,7 +419,7 @@ class Config(BaseConfig):
             default = self.defaults[self.collection][key]
         except KeyError as e:
             if self.force_registration:
-                raise AttributeError("Key '{}' not registere!".format(key)) from e
+                raise AttributeError("Key '{}' not registered!".format(key)) from e
             default = None
 
         self.curr_key = key
@@ -483,7 +484,7 @@ class Config(BaseConfig):
         new = type(self)(self.cog_name, self.uuid, self.driver,
                          hash_uuid=False, defaults=self.defaults)
         new.collection = "GUILD"
-        new.colelction_uuid = guild.id
+        new.collection_uuid = guild.id
         new._driver = None
         return new
 

@@ -19,7 +19,7 @@ class JSON(BaseDriver):
 
         self.data_path = self.data_path / self.file_name
 
-        self.jsonIO = JsonIO(self.datta_path)
+        self.jsonIO = JsonIO(self.data_path)
 
         try:
             self.data = self.jsonIO._load_json()
